@@ -6,7 +6,7 @@ A CLI tool for managing daily work notes in Obsidian. Track your pending and com
 
 - Create daily work notes in Obsidian-compatible markdown format
 - Interactive review of pending items from previous days
-- AI-powered work summaries using OpenCode server (Gemini Flash)
+- AI-powered work summaries using OpenCode server
 - Carry forward incomplete tasks to the next day
 - Track completed work with checkboxes
 
@@ -49,6 +49,8 @@ Create a `.env` file in the project root (or where you run the CLI):
 WORK_NOTES_LOCATION=~/Documents/obsidian-notes/Inbox/work
 WORKPLACE_NAME=YourCompany
 OPENCODE_SERVER=http://127.0.0.1:4096
+AI_PROVIDER=github-copilot
+AI_MODEL=claude-sonnet-4
 ```
 
 | Variable | Description | Default |
@@ -56,6 +58,8 @@ OPENCODE_SERVER=http://127.0.0.1:4096
 | `WORK_NOTES_LOCATION` | Path to your Obsidian notes folder | `~/Documents/obsidian-notes/Inbox/work` |
 | `WORKPLACE_NAME` | Name of your workplace (used in filenames and tags) | `Work` |
 | `OPENCODE_SERVER` | URL of your OpenCode server for AI summaries | `http://127.0.0.1:4096` |
+| `AI_PROVIDER` | AI provider ID for summaries | `github-copilot` |
+| `AI_MODEL` | AI model ID for summaries | `claude-sonnet-4` |
 
 ## CLI Commands
 
@@ -106,6 +110,14 @@ Manually review pending items from previous notes without creating a new note or
 
 ```bash
 noter review
+```
+
+### `noter summarize`
+
+Generate and display an AI-powered summary of today's completed work (output only, does not save to file).
+
+```bash
+noter summarize
 ```
 
 ## Note Format

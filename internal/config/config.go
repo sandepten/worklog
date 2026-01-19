@@ -13,6 +13,8 @@ type Config struct {
 	WorkNotesLocation string
 	WorkplaceName     string
 	OpenCodeServer    string
+	AIProvider        string
+	AIModel           string
 }
 
 // Load reads the configuration from .env file
@@ -24,6 +26,8 @@ func Load() (*Config, error) {
 		WorkNotesLocation: getEnv("WORK_NOTES_LOCATION", "~/Documents/obsidian-notes/Inbox/work"),
 		WorkplaceName:     getEnv("WORKPLACE_NAME", "Work"),
 		OpenCodeServer:    getEnv("OPENCODE_SERVER", "http://127.0.0.1:4096"),
+		AIProvider:        getEnv("AI_PROVIDER", "github-copilot"),
+		AIModel:           getEnv("AI_MODEL", "claude-sonnet-4"),
 	}
 
 	// Expand ~ in the path

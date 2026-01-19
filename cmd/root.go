@@ -60,5 +60,5 @@ func initConfig() {
 	parser = notes.NewParser(cfg.WorkNotesLocation, cfg.WorkplaceName)
 	writer = notes.NewWriter(cfg.WorkNotesLocation, cfg.WorkplaceName)
 	prompter = ui.NewPrompter()
-	aiClient = summarizer.NewClient(cfg.OpenCodeServer)
+	aiClient = summarizer.NewClient(cfg.OpenCodeServer, cfg.AIProvider, cfg.AIModel)
 }
