@@ -135,7 +135,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 	fmt.Println("\n--- Today's Note ---")
 	prompter.DisplayWorkItems(todayNote.PendingWork, todayNote.CompletedWork)
 
-	fmt.Println("Daily workflow complete! Use 'noter add \"task\"' to add new items.")
+	fmt.Println("Daily workflow complete! Use 'worklog add \"task\"' to add new items.")
 
 	return nil
 }

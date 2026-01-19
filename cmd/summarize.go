@@ -28,7 +28,7 @@ func runSummarize(cmd *cobra.Command, args []string) error {
 	}
 
 	if todayNote == nil {
-		prompter.DisplayError("No note found for today. Use 'noter start' to create one.")
+		prompter.DisplayError("No note found for today. Use 'worklog start' to create one.")
 		return nil
 	}
 

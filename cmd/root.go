@@ -21,8 +21,8 @@ var (
 
 // rootCmd represents the base command
 var rootCmd = &cobra.Command{
-	Use:   "noter",
-	Short: "Work Obsidian Noter - Daily work tracking CLI",
+	Use:   "worklog",
+	Short: "Worklog - Daily work tracking CLI",
 	Long: `A CLI tool for managing daily work notes in Obsidian.
 	
 Track your pending and completed work items, review yesterday's tasks,

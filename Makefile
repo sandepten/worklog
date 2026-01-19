@@ -1,6 +1,6 @@
 .PHONY: build install clean
 
-BINARY_NAME=noter
+BINARY_NAME=worklog
 BUILD_DIR=.
 INSTALL_DIR=$(HOME)/.local/bin
 

@@ -1,4 +1,4 @@
-# Work Obsidian Noter
+# Worklog
 
 A CLI tool for managing daily work notes in Obsidian. Track your pending and completed work items, review yesterday's tasks, and get AI-powered summaries of your accomplishments.
 
@@ -14,8 +14,8 @@ A CLI tool for managing daily work notes in Obsidian. Track your pending and com
 
 ```bash
 # Clone the repository
-git clone https://github.com/sandepten/work-obsidian-noter.git
-cd work-obsidian-noter
+git clone https://github.com/sandepten/worklog.git
+cd worklog
 
 # Install dependencies
 go mod tidy
@@ -36,7 +36,7 @@ make build
 
 | Command | Description |
 |---------|-------------|
-| `make build` | Build the `noter` binary |
+| `make build` | Build the `worklog` binary |
 | `make install` | Build and create symlink in `~/.local/bin` |
 | `make clean` | Remove binary and symlink |
 | `make help` | Show available commands |
@@ -63,7 +63,7 @@ AI_MODEL=claude-sonnet-4
 
 ## CLI Commands
 
-### `noter start`
+### `worklog start`
 
 **Main command** - Start your daily workflow. This command:
 
@@ -75,49 +75,49 @@ AI_MODEL=claude-sonnet-4
 6. Creates today's note with the summary
 
 ```bash
-noter start
+worklog start
 ```
 
-### `noter add "task"`
+### `worklog add "task"`
 
 Add a new pending work item to today's note.
 
 ```bash
-noter add "Fix the login bug"
-noter add "Review PR #123"
-noter add "Update documentation for API endpoints"
+worklog add "Fix the login bug"
+worklog add "Review PR #123"
+worklog add "Update documentation for API endpoints"
 ```
 
-### `noter done`
+### `worklog done`
 
 Interactively mark pending items as completed. Shows each pending item and asks if it's done.
 
 ```bash
-noter done
+worklog done
 ```
 
-### `noter list`
+### `worklog list`
 
 Display all pending and completed work items from today's note.
 
 ```bash
-noter list
+worklog list
 ```
 
-### `noter review`
+### `worklog review`
 
 Manually review pending items from previous notes without creating a new note or generating summaries.
 
 ```bash
-noter review
+worklog review
 ```
 
-### `noter summarize`
+### `worklog summarize`
 
 Generate and display an AI-powered summary of today's completed work (output only, does not save to file).
 
 ```bash
-noter summarize
+worklog summarize
 ```
 
 ## Note Format
@@ -157,7 +157,7 @@ yesterday's summary:: Fixed database connection issues and deployed hotfix to pr
 
 ### Morning Routine
 
-1. Run `noter start` at the beginning of your workday
+1. Run `worklog start` at the beginning of your workday
 2. Review each pending item from yesterday:
    - Press `y` if completed
    - Press `n` to carry forward to today
@@ -166,14 +166,14 @@ yesterday's summary:: Fixed database connection issues and deployed hotfix to pr
 
 ### During the Day
 
-- Use `noter add "task"` to add new work items
-- Use `noter done` to mark items as completed
-- Use `noter list` to see your current progress
+- Use `worklog add "task"` to add new work items
+- Use `worklog done` to mark items as completed
+- Use `worklog list` to see your current progress
 
 ### Example Session
 
 ```
-$ noter start
+$ worklog start
 Starting daily workflow for 2025-01-19...
 
 Found previous note: 2025-01-18-Jio.md (Date: 2025-01-18)
@@ -198,7 +198,7 @@ Saved today's note: 2025-01-19-Jio.md
 --- Completed Work ---
   No completed items
 
-Daily workflow complete! Use 'noter add "task"' to add new items.
+Daily workflow complete! Use 'worklog add "task"' to add new items.
 ```
 
 ## Requirements

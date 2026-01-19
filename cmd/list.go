@@ -28,7 +28,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	if todayNote == nil {
-		prompter.DisplayMessage("No note found for today. Use 'noter start' to create one.")
+		prompter.DisplayMessage("No note found for today. Use 'worklog start' to create one.")
 		return nil
 	}
 
