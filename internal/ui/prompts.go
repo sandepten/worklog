@@ -306,3 +306,61 @@ func (p *Prompter) SelectWorkplace(workplaces []string) (string, error) {
 
 	return result, nil
 }
+
+// PromptForWorkplaceName prompts the user to enter a workplace name
+func (p *Prompter) PromptForWorkplaceName(label string) (string, error) {
+	validate := func(input string) error {
+		trimmed := strings.TrimSpace(input)
+		if trimmed == "" {
+			return fmt.Errorf("workplace name cannot be empty")
+		}
+		if strings.Contains(trimmed, ",") {
+			return fmt.Errorf("workplace name cannot contain commas")
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:    label,
+		Validate: validate,
+	}
+
+	result, err := prompt.Run()
+	if err != nil {
+		if err == promptui.ErrInterrupt {
+			return "", fmt.Errorf("cancelled")
+		}
+		return "", err
+	}
+
+	return strings.TrimSpace(result), nil
+}
+
+// SelectWorkplaceToRename allows selecting a workplace to rename
+func (p *Prompter) SelectWorkplaceToRename(workplaces []string) (string, error) {
+	if len(workplaces) == 0 {
+		return "", fmt.Errorf("no workplaces configured")
+	}
+
+	fmt.Println()
+	fmt.Println(RenderInfo("Select workplace to rename"))
+
+	prompt := promptui.Select{
+		Label: "Workplace",
+		Items: workplaces,
+		Size:  10,
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{ . }}",
+			Active:   "> {{ . | cyan | bold }}",
+			Inactive: "  {{ . }}",
+			Selected: WarningStyle.Render("→") + " {{ . | yellow }}",
+		},
+	}
+
+	_, result, err := prompt.Run()
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}
