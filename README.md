@@ -9,6 +9,8 @@ A CLI tool for managing daily work notes in Obsidian. Track your pending and com
 - AI-powered work summaries using OpenCode server
 - Carry forward incomplete tasks to the next day
 - Track completed work with checkboxes
+- **Multi-workplace support** - Track work across multiple companies or roles
+- **Workplace management** - Add, rename, and list workplaces via CLI
 
 ## Installation
 
@@ -56,8 +58,11 @@ cat > ~/.config/worklog/config << 'EOF'
 # Path to your Obsidian notes folder
 WORK_NOTES_LOCATION=~/Documents/obsidian-notes/Inbox/work
 
-# Name of your workplace (used in filenames and tags)
+# Single workplace (legacy mode)
 WORKPLACE_NAME=Jio
+
+# OR multiple workplaces (new)
+WORKPLACES=Jio,Personal,Contractor
 
 # OpenCode server URL for AI summaries
 OPENCODE_SERVER=http://127.0.0.1:4096
@@ -68,19 +73,88 @@ AI_MODEL=claude-sonnet-4
 EOF
 ```
 
+### Multiple Workplaces
+
+Worklog supports tracking work across multiple workplaces (companies, roles, or projects). Configure multiple workplaces using the `WORKPLACES` variable:
+
+```bash
+# In ~/.config/worklog/config
+WORKPLACES=Jio,Personal,Contractor
+
+# Or as an environment variable
+export WORKPLACES="Jio,Personal,Contractor"
+```
+
+When multiple workplaces are configured, most commands will prompt you to select which workplace to use:
+- `worklog start`
+- `worklog add`
+- `worklog add-many`
+- `worklog done`
+- `worklog list`
+- `worklog delete`
+- `worklog review`
+- `worklog summarize`
+
+Use `worklog workplace add` to add new workplaces without manually editing the config.
+
 ### Configuration Options
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `WORK_NOTES_LOCATION` | Path to your Obsidian notes folder | `~/Documents/obsidian-notes/Inbox/work` |
-| `WORKPLACE_NAME` | Name of your workplace (used in filenames and tags) | `Work` |
+| `WORKPLACE_NAME` | Single workplace name (legacy mode, use WORKPLACES instead) | `Work` |
+| `WORKPLACES` | Comma-separated list of multiple workplaces | Empty |
 | `OPENCODE_SERVER` | URL of your OpenCode server for AI summaries | `http://127.0.0.1:4096` |
 | `AI_PROVIDER` | AI provider ID for summaries | `github-copilot` |
 | `AI_MODEL` | AI model ID for summaries | `claude-sonnet-4` |
 
 > **Note:** Environment variables take precedence over the config file, so you can override settings if needed.
 
-## CLI Commands
+### `worklog delete`
+
+Delete tasks from today's note, with two modes of operation:
+
+**Interactive Mode** - Select specific tasks to delete:
+```bash
+worklog delete
+```
+
+**Delete All Mode** - Delete the entire today's worklog file:
+```bash
+worklog delete --all
+```
+
+When multiple workplaces are configured, you'll be prompted to select which workplace's tasks to delete.
+
+### `worklog add-many`
+
+Add multiple work items interactively in a loop. Press Enter after each task, Ctrl+C when done:
+```bash
+worklog add-many
+```
+
+When multiple workplaces are configured, you'll be prompted to select which workplace to add tasks to.
+
+### `worklog workplace`
+
+Manage multiple workplaces for tracking work across different companies or roles.
+
+| Subcommand | Description |
+|------------|-------------|
+| `worklog workplace add [name]` | Add a new workplace to your configuration |
+| `worklog workplace rename` | Rename an existing workplace (also updates all note files) |
+| `workplace list` | List all configured workplaces |
+
+```bash
+# Add a new workplace
+worklog workplace add "MyCompany"
+
+# Rename a workplace
+worklog workplace rename
+
+# List all workplaces
+worklog workplace list
+```
 
 ### `worklog start`
 
@@ -93,13 +167,15 @@ EOF
 5. Generates an AI summary of yesterday's completed work
 6. Creates today's note with the summary
 
+When multiple workplaces are configured, you'll be prompted to select which workplace to use.
+
 ```bash
 worklog start
 ```
 
 ### `worklog add "task"`
 
-Add a new pending work item to today's note.
+Add a new pending work item to today's note. When multiple workplaces are configured, you'll be prompted to select which workplace to add the task to.
 
 ```bash
 worklog add "Fix the login bug"
@@ -109,7 +185,7 @@ worklog add "Update documentation for API endpoints"
 
 ### `worklog done`
 
-Interactively mark pending items as completed. Shows each pending item and asks if it's done.
+Interactively mark pending items as completed. Shows each pending item and asks if it's done. When multiple workplaces are configured, you'll be prompted to select which workplace's tasks to review.
 
 ```bash
 worklog done
@@ -117,7 +193,7 @@ worklog done
 
 ### `worklog list`
 
-Display all pending and completed work items from today's note.
+Display all pending and completed work items from today's note. When multiple workplaces are configured, you'll be prompted to select which workplace to display.
 
 ```bash
 worklog list
@@ -125,7 +201,7 @@ worklog list
 
 ### `worklog review`
 
-Manually review pending items from previous notes without creating a new note or generating summaries.
+Manually review pending items from previous notes without creating a new note or generating summaries. When multiple workplaces are configured, you'll be prompted to select which workplace to review.
 
 ```bash
 worklog review
@@ -133,7 +209,7 @@ worklog review
 
 ### `worklog summarize`
 
-Generate and display an AI-powered summary of today's completed work (output only, does not save to file).
+Generate and display an AI-powered summary of today's completed work (output only, does not save to file). When multiple workplaces are configured, you'll be prompted to select which workplace to summarize.
 
 ```bash
 worklog summarize
@@ -229,6 +305,7 @@ Daily workflow complete! Use 'worklog add "task"' to add new items.
 
 - [spf13/cobra](https://github.com/spf13/cobra) - CLI framework
 - [manifoldco/promptui](https://github.com/manifoldco/promptui) - Interactive prompts
+- [mattn/go-colorize](https://github.com/mattn/go-colorize) - Colored terminal output
 
 ## License
 
