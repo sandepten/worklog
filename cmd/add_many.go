@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sandepten/work-obsidian-noter/internal/notes"
 	"github.com/sandepten/work-obsidian-noter/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +14,8 @@ var addManyCmd = &cobra.Command{
 	Short: "Add multiple work items interactively",
 	Long: `Add multiple pending work items in a loop.
 Press Enter after each task to add it.
-Press Ctrl+C when done to exit and see a summary.`,
+Press Ctrl+C when done to exit and see a summary.
+You will be prompted to select a workplace if multiple are configured.`,
 	RunE: runAddMany,
 }
 
@@ -24,20 +26,30 @@ func init() {
 func runAddMany(cmd *cobra.Command, args []string) error {
 	today := time.Now().Truncate(24 * time.Hour)
 
-	// Get or create today's note
-	todayNote, err := parser.FindTodayNote(today)
+	// Ask which workplace this task belongs to
+	selectedWorkplace, err := prompter.SelectWorkplace(cfg.Workplaces)
+	if err != nil {
+		return fmt.Errorf("error selecting workplace: %w", err)
+	}
+
+	// Create parser and writer for the selected workplace
+	workplaceParser := notes.NewParser(cfg.WorkNotesLocation, selectedWorkplace)
+	workplaceWriter := notes.NewWriter(cfg.WorkNotesLocation, selectedWorkplace)
+
+	// Get or create today's note for the selected workplace
+	todayNote, err := workplaceParser.FindTodayNote(today)
 	if err != nil {
 		return fmt.Errorf("error finding today's note: %w", err)
 	}
 
 	if todayNote == nil {
-		todayNote = writer.CreateTodayNote(today)
-		prompter.DisplayMessage("Creating today's note...")
+		todayNote = workplaceWriter.CreateTodayNote(today)
+		prompter.DisplayMessage(fmt.Sprintf("Creating today's note for %s...", selectedWorkplace))
 	}
 
 	// Display header
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("📝 Add Multiple Tasks"))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("📝 Add Multiple Tasks (%s)", selectedWorkplace)))
 	fmt.Println(ui.MutedStyle.Render("Enter each task and press Enter. Press Ctrl+C when done."))
 	fmt.Println(ui.RenderDivider(50))
 	fmt.Println()
@@ -76,13 +88,13 @@ func runAddMany(cmd *cobra.Command, args []string) error {
 
 	// Save the note if any tasks were added
 	if len(addedTasks) > 0 {
-		if err := writer.WriteNote(todayNote); err != nil {
+		if err := workplaceWriter.WriteNote(todayNote); err != nil {
 			return fmt.Errorf("error saving note: %w", err)
 		}
 
 		// Show summary
 		fmt.Println()
-		summary := fmt.Sprintf("Added %d task(s) to today's worklog", len(addedTasks))
+		summary := fmt.Sprintf("Added %d task(s) to %s worklog", len(addedTasks), selectedWorkplace)
 		fmt.Println(ui.RenderSuccess(summary))
 		fmt.Println()
 

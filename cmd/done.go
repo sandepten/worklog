@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sandepten/work-obsidian-noter/internal/notes"
 	"github.com/sandepten/work-obsidian-noter/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -11,7 +12,7 @@ import (
 var doneCmd = &cobra.Command{
 	Use:   "done",
 	Short: "Mark pending items as completed",
-	Long:  `Interactively mark pending items as completed in today's note.`,
+	Long:  `Interactively mark pending items as completed in today's note. You will be prompted to select a workplace if multiple are configured.`,
 	RunE:  runDone,
 }
 
@@ -22,26 +23,36 @@ func init() {
 func runDone(cmd *cobra.Command, args []string) error {
 	today := time.Now().Truncate(24 * time.Hour)
 
+	// Ask which workplace
+	selectedWorkplace, err := prompter.SelectWorkplace(cfg.Workplaces)
+	if err != nil {
+		return fmt.Errorf("error selecting workplace: %w", err)
+	}
+
+	// Create parser and writer for the selected workplace
+	workplaceParser := notes.NewParser(cfg.WorkNotesLocation, selectedWorkplace)
+	workplaceWriter := notes.NewWriter(cfg.WorkNotesLocation, selectedWorkplace)
+
 	// Get today's note
-	todayNote, err := parser.FindTodayNote(today)
+	todayNote, err := workplaceParser.FindTodayNote(today)
 	if err != nil {
 		return fmt.Errorf("error finding today's note: %w", err)
 	}
 
 	if todayNote == nil {
-		prompter.DisplayWarning("No note found for today. Use 'worklog start' to create one.")
+		prompter.DisplayWarning(fmt.Sprintf("No note found for today in %s. Use 'worklog start' to create one.", selectedWorkplace))
 		return nil
 	}
 
 	if !todayNote.HasPendingWork() {
 		fmt.Println()
-		fmt.Println(ui.RenderSuccess("No pending items — you're all caught up! 🎉"))
+		fmt.Println(ui.RenderSuccess(fmt.Sprintf("No pending items in %s — you're all caught up! 🎉", selectedWorkplace)))
 		fmt.Println()
 		return nil
 	}
 
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("✓ Mark Tasks as Done"))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("✓ Mark Tasks as Done (%s)", selectedWorkplace)))
 	fmt.Println(ui.MutedStyle.Render("Select which tasks you've completed"))
 	fmt.Println(ui.RenderDivider(50))
 	fmt.Println()
@@ -65,7 +76,7 @@ func runDone(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save the note
-	if err := writer.WriteNote(todayNote); err != nil {
+	if err := workplaceWriter.WriteNote(todayNote); err != nil {
 		return fmt.Errorf("error saving note: %w", err)
 	}
 

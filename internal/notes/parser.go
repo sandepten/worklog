@@ -2,6 +2,7 @@ package notes
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -154,7 +155,7 @@ func (p *Parser) parseWorkItem(line string) *WorkItem {
 
 // FindMostRecentNote finds the most recent note before the given date
 func (p *Parser) FindMostRecentNote(beforeDate time.Time) (*Note, error) {
-	pattern := filepath.Join(p.notesDir, "*.md")
+	pattern := filepath.Join(p.notesDir, fmt.Sprintf("*-%s.md", p.workplaceName))
 	files, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, err

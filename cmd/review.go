@@ -15,7 +15,8 @@ var reviewCmd = &cobra.Command{
 	Use:   "review",
 	Short: "Review pending items from previous notes",
 	Long: `Manually review and process pending items from previous notes
-without creating a new note or generating summaries.`,
+without creating a new note or generating summaries.
+You will be prompted to select a workplace if multiple are configured.`,
 	RunE: runReview,
 }
 
@@ -26,19 +27,29 @@ func init() {
 func runReview(cmd *cobra.Command, args []string) error {
 	today := time.Now().Truncate(24 * time.Hour)
 
+	// Ask which workplace
+	selectedWorkplace, err := prompter.SelectWorkplace(cfg.Workplaces)
+	if err != nil {
+		return fmt.Errorf("error selecting workplace: %w", err)
+	}
+
+	// Create parser and writer for the selected workplace
+	workplaceParser := notes.NewParser(cfg.WorkNotesLocation, selectedWorkplace)
+	workplaceWriter := notes.NewWriter(cfg.WorkNotesLocation, selectedWorkplace)
+
 	// Find the most recent previous note
-	previousNote, err := parser.FindMostRecentNote(today)
+	previousNote, err := workplaceParser.FindMostRecentNote(today)
 	if err != nil {
 		return fmt.Errorf("error finding previous note: %w", err)
 	}
 
 	if previousNote == nil {
-		prompter.DisplayMessage("No previous notes found.")
+		prompter.DisplayMessage(fmt.Sprintf("No previous notes found for %s.", selectedWorkplace))
 		return nil
 	}
 
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("📝 Review Previous Note"))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("📝 Review Previous Note (%s)", selectedWorkplace)))
 	fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("📄 %s (%s)", filepath.Base(previousNote.FilePath), previousNote.Date.Format("January 2, 2006"))))
 	fmt.Println(ui.RenderDivider(50))
 	fmt.Println()
@@ -81,7 +92,7 @@ func runReview(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save the note
-	if err := writer.WriteNote(previousNote); err != nil {
+	if err := workplaceWriter.WriteNote(previousNote); err != nil {
 		return fmt.Errorf("error saving note: %w", err)
 	}
 

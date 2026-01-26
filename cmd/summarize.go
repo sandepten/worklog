@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sandepten/work-obsidian-noter/internal/notes"
 	"github.com/sandepten/work-obsidian-noter/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -11,7 +12,7 @@ import (
 var summarizeCmd = &cobra.Command{
 	Use:   "summarize",
 	Short: "Get AI summary of today's completed work",
-	Long:  `Generate and display an AI-powered summary of today's completed work items.`,
+	Long:  `Generate and display an AI-powered summary of today's completed work items. You will be prompted to select a workplace if multiple are configured.`,
 	RunE:  runSummarize,
 }
 
@@ -22,27 +23,36 @@ func init() {
 func runSummarize(cmd *cobra.Command, args []string) error {
 	today := time.Now().Truncate(24 * time.Hour)
 
+	// Ask which workplace
+	selectedWorkplace, err := prompter.SelectWorkplace(cfg.Workplaces)
+	if err != nil {
+		return fmt.Errorf("error selecting workplace: %w", err)
+	}
+
+	// Create parser for the selected workplace
+	workplaceParser := notes.NewParser(cfg.WorkNotesLocation, selectedWorkplace)
+
 	// Get today's note
-	todayNote, err := parser.FindTodayNote(today)
+	todayNote, err := workplaceParser.FindTodayNote(today)
 	if err != nil {
 		return fmt.Errorf("error finding today's note: %w", err)
 	}
 
 	if todayNote == nil {
-		prompter.DisplayWarning("No note found for today. Use 'worklog start' to create one.")
+		prompter.DisplayWarning(fmt.Sprintf("No note found for today in %s. Use 'worklog start' to create one.", selectedWorkplace))
 		return nil
 	}
 
 	if !todayNote.HasCompletedWork() {
 		fmt.Println()
-		fmt.Println(ui.MutedStyle.Render("No completed work items to summarize."))
+		fmt.Println(ui.MutedStyle.Render(fmt.Sprintf("No completed work items to summarize in %s.", selectedWorkplace)))
 		fmt.Println(ui.MutedStyle.Render("Use 'worklog done' to mark items as completed first."))
 		fmt.Println()
 		return nil
 	}
 
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("📊 Work Summary"))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("📊 Work Summary (%s)", selectedWorkplace)))
 	fmt.Println(ui.MutedStyle.Render(today.Format("Monday, January 2, 2006")))
 	fmt.Println(ui.RenderDivider(50))
 	fmt.Println()

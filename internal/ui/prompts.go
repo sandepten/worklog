@@ -242,3 +242,125 @@ func (p *Prompter) DisplayStats(pending, completed int) {
 	fmt.Println(stats)
 	fmt.Println()
 }
+
+// SelectTasksToDelete allows selecting tasks to delete from a list
+func (p *Prompter) SelectTasksToDelete(items []notes.WorkItem, taskType string) ([]int, error) {
+	if len(items) == 0 {
+		return nil, nil
+	}
+
+	var selectedIndices []int
+
+	fmt.Println(RenderInfo(fmt.Sprintf("Select %s tasks to delete:", taskType)))
+	fmt.Println()
+
+	for i, item := range items {
+		prompt := promptui.Prompt{
+			Label:     fmt.Sprintf("Delete %s task: \"%s\"", taskType, item.Text),
+			IsConfirm: true,
+		}
+
+		_, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrAbort {
+				continue // User said no, skip this item
+			}
+			return selectedIndices, err
+		}
+		selectedIndices = append(selectedIndices, i)
+	}
+
+	return selectedIndices, nil
+}
+
+// SelectWorkplace allows selecting a workplace from the configured list
+func (p *Prompter) SelectWorkplace(workplaces []string) (string, error) {
+	if len(workplaces) == 0 {
+		return "", fmt.Errorf("no workplaces configured")
+	}
+
+	// If only one workplace, return it directly
+	if len(workplaces) == 1 {
+		return workplaces[0], nil
+	}
+
+	fmt.Println()
+	fmt.Println(RenderInfo("Select workplace"))
+
+	prompt := promptui.Select{
+		Label: "Workplace",
+		Items: workplaces,
+		Size:  10,
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{ . }}",
+			Active:   "> {{ . | cyan | bold }}",
+			Inactive: "  {{ . }}",
+			Selected: SuccessStyle.Render(IconSuccess) + " {{ . | green }}",
+		},
+	}
+
+	_, result, err := prompt.Run()
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}
+
+// PromptForWorkplaceName prompts the user to enter a workplace name
+func (p *Prompter) PromptForWorkplaceName(label string) (string, error) {
+	validate := func(input string) error {
+		trimmed := strings.TrimSpace(input)
+		if trimmed == "" {
+			return fmt.Errorf("workplace name cannot be empty")
+		}
+		if strings.Contains(trimmed, ",") {
+			return fmt.Errorf("workplace name cannot contain commas")
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:    label,
+		Validate: validate,
+	}
+
+	result, err := prompt.Run()
+	if err != nil {
+		if err == promptui.ErrInterrupt {
+			return "", fmt.Errorf("cancelled")
+		}
+		return "", err
+	}
+
+	return strings.TrimSpace(result), nil
+}
+
+// SelectWorkplaceToRename allows selecting a workplace to rename
+func (p *Prompter) SelectWorkplaceToRename(workplaces []string) (string, error) {
+	if len(workplaces) == 0 {
+		return "", fmt.Errorf("no workplaces configured")
+	}
+
+	fmt.Println()
+	fmt.Println(RenderInfo("Select workplace to rename"))
+
+	prompt := promptui.Select{
+		Label: "Workplace",
+		Items: workplaces,
+		Size:  10,
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{ . }}",
+			Active:   "> {{ . | cyan | bold }}",
+			Inactive: "  {{ . }}",
+			Selected: WarningStyle.Render("→") + " {{ . | yellow }}",
+		},
+	}
+
+	_, result, err := prompt.Run()
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}

@@ -18,7 +18,8 @@ var startCmd = &cobra.Command{
 1. Review pending items from the most recent previous note
 2. Mark items as completed or carry them forward
 3. Generate an AI summary of yesterday's completed work
-4. Create today's note with the summary`,
+4. Create today's note with the summary
+You will be prompted to select a workplace if multiple are configured.`,
 	RunE: runStart,
 }
 
@@ -29,27 +30,37 @@ func init() {
 func runStart(cmd *cobra.Command, args []string) error {
 	today := time.Now().Truncate(24 * time.Hour)
 
+	// Ask which workplace
+	selectedWorkplace, err := prompter.SelectWorkplace(cfg.Workplaces)
+	if err != nil {
+		return fmt.Errorf("error selecting workplace: %w", err)
+	}
+
+	// Create parser and writer for the selected workplace
+	workplaceParser := notes.NewParser(cfg.WorkNotesLocation, selectedWorkplace)
+	workplaceWriter := notes.NewWriter(cfg.WorkNotesLocation, selectedWorkplace)
+
 	fmt.Println()
-	fmt.Println(ui.TitleStyle.Render("🚀 Daily Workflow"))
+	fmt.Println(ui.TitleStyle.Render(fmt.Sprintf("🚀 Daily Workflow (%s)", selectedWorkplace)))
 	fmt.Println(ui.MutedStyle.Render(today.Format("Monday, January 2, 2006")))
 	fmt.Println(ui.RenderDivider(50))
 	fmt.Println()
 
 	// Check if today's note already exists
-	todayNote, err := parser.FindTodayNote(today)
+	todayNote, err := workplaceParser.FindTodayNote(today)
 	if err != nil {
 		return fmt.Errorf("error checking for today's note: %w", err)
 	}
 
 	// Find the most recent previous note
-	previousNote, err := parser.FindMostRecentNote(today)
+	previousNote, err := workplaceParser.FindMostRecentNote(today)
 	if err != nil {
 		return fmt.Errorf("error finding previous note: %w", err)
 	}
 
 	// Create today's note if it doesn't exist
 	if todayNote == nil {
-		todayNote = writer.CreateTodayNote(today)
+		todayNote = workplaceWriter.CreateTodayNote(today)
 		fmt.Println(ui.RenderSuccess(fmt.Sprintf("Created new note: %s", filepath.Base(todayNote.FilePath))))
 	} else {
 		fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("ℹ Today's note already exists: %s", filepath.Base(todayNote.FilePath))))
@@ -132,7 +143,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 		}
 
 		// Save the updated previous note
-		if err := writer.WriteNote(previousNote); err != nil {
+		if err := workplaceWriter.WriteNote(previousNote); err != nil {
 			return fmt.Errorf("error saving previous note: %w", err)
 		}
 		fmt.Println(ui.InfoStyle.Render(fmt.Sprintf("ℹ Updated: %s", filepath.Base(previousNote.FilePath))))
@@ -141,7 +152,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save today's note
-	if err := writer.WriteNote(todayNote); err != nil {
+	if err := workplaceWriter.WriteNote(todayNote); err != nil {
 		return fmt.Errorf("error saving today's note: %w", err)
 	}
 

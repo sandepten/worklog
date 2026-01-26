@@ -49,8 +49,8 @@ func generateID(date time.Time, workplaceName string) string {
 	return workplaceName + "-" + date.Format("2-Jan-2006")
 }
 
-// toLowerCase converts a string to lowercase
-func toLowerCase(s string) string {
+// ToLowerCase converts a string to lowercase (exported for use by other packages)
+func ToLowerCase(s string) string {
 	result := make([]byte, len(s))
 	for i := 0; i < len(s); i++ {
 		c := s[i]
@@ -61,6 +61,11 @@ func toLowerCase(s string) string {
 		}
 	}
 	return string(result)
+}
+
+// toLowerCase is an alias for internal use
+func toLowerCase(s string) string {
+	return ToLowerCase(s)
 }
 
 // GenerateFilename creates the filename for a note: YYYY-MM-DD-WorkplaceName.md
@@ -96,5 +101,19 @@ func (n *Note) MarkItemCompleted(index int) {
 		n.CompletedWork = append(n.CompletedWork, item)
 		// Remove from pending
 		n.PendingWork = append(n.PendingWork[:index], n.PendingWork[index+1:]...)
+	}
+}
+
+// RemovePendingItem removes a pending item at the given index
+func (n *Note) RemovePendingItem(index int) {
+	if index >= 0 && index < len(n.PendingWork) {
+		n.PendingWork = append(n.PendingWork[:index], n.PendingWork[index+1:]...)
+	}
+}
+
+// RemoveCompletedItem removes a completed item at the given index
+func (n *Note) RemoveCompletedItem(index int) {
+	if index >= 0 && index < len(n.CompletedWork) {
+		n.CompletedWork = append(n.CompletedWork[:index], n.CompletedWork[index+1:]...)
 	}
 }
