@@ -8,6 +8,7 @@ import (
 
 	"github.com/sandepten/work-obsidian-noter/internal/notes"
 	"github.com/sandepten/work-obsidian-noter/internal/ui"
+	"github.com/sandepten/work-obsidian-noter/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +25,7 @@ func init() {
 }
 
 func runReview(cmd *cobra.Command, args []string) error {
-	today := time.Now().Truncate(24 * time.Hour)
+	today := util.TruncateToLocalDay(time.Now())
 
 	// Find the most recent previous note
 	previousNote, err := parser.FindMostRecentNote(today)
