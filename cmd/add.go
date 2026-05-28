@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sandepten/work-obsidian-noter/internal/ui"
+	"github.com/sandepten/work-obsidian-noter/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,7 @@ func init() {
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	today := time.Now().Truncate(24 * time.Hour)
+	today := util.TruncateToLocalDay(time.Now())
 	taskText := strings.Join(args, " ")
 
 	// Get or create today's note
