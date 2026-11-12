@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 var (
 	pendingOnly bool
+	jsonOutput  bool
 )
 
 var listCmd = &cobra.Command{
@@ -21,6 +23,7 @@ var listCmd = &cobra.Command{
 
 func init() {
 	listCmd.Flags().BoolVarP(&pendingOnly, "pending", "p", false, "Show only pending tasks")
+	listCmd.Flags().BoolVarP(&jsonOutput, "json", "j", false, "Output tasks in JSON format")
 	rootCmd.AddCommand(listCmd)
 }
 
@@ -34,7 +37,50 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	if todayNote == nil {
+		if jsonOutput {
+			// Return empty JSON if no note found
+			fmt.Println(`{"pending":[],"completed":[]}`)
+			return nil
+		}
 		prompter.DisplayWarning("No note found for today. Use 'worklog start' to create one.")
+		return nil
+	}
+
+	// JSON output format
+	if jsonOutput {
+		type Task struct {
+			Index int    `json:"index"`
+			Text  string `json:"text"`
+		}
+		type TasksOutput struct {
+			Pending   []Task `json:"pending"`
+			Completed []Task `json:"completed"`
+		}
+
+		output := TasksOutput{
+			Pending:   make([]Task, 0, len(todayNote.PendingWork)),
+			Completed: make([]Task, 0, len(todayNote.CompletedWork)),
+		}
+
+		for i, item := range todayNote.PendingWork {
+			output.Pending = append(output.Pending, Task{
+				Index: i + 1,
+				Text:  item.Text,
+			})
+		}
+
+		for i, item := range todayNote.CompletedWork {
+			output.Completed = append(output.Completed, Task{
+				Index: i + 1,
+				Text:  item.Text,
+			})
+		}
+
+		jsonData, err := json.Marshal(output)
+		if err != nil {
+			return fmt.Errorf("error marshaling JSON: %w", err)
+		}
+		fmt.Println(string(jsonData))
 		return nil
 	}
 

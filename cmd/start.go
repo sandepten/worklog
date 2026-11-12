@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"time"
@@ -153,9 +155,113 @@ func runStart(cmd *cobra.Command, args []string) error {
 	// Show current state
 	prompter.DisplayWorkItems(todayNote.PendingWork, todayNote.CompletedWork)
 
+	fmt.Println()
+	fmt.Println(ui.RenderDivider(50))
+	fmt.Println()
+
+	// Commit all files in the obsidian folder
+	if err := commitObsidianFiles(); err != nil {
+		fmt.Println(ui.RenderWarning(fmt.Sprintf("Could not commit files: %v", err)))
+		fmt.Println(ui.MutedStyle.Render("Continuing without git commit..."))
+	} else {
+		fmt.Println(ui.RenderSuccess("Committed all files in obsidian folder"))
+	}
+
+	fmt.Println()
 	fmt.Println(ui.RenderSuccess("Daily workflow complete!"))
 	fmt.Println(ui.MutedStyle.Render("Use 'worklog add \"task\"' to add new items"))
 	fmt.Println()
 
 	return nil
+}
+
+// commitObsidianFiles adds all files in the obsidian folder and commits them
+func commitObsidianFiles() error {
+	obsidianPath := cfg.WorkNotesLocation
+
+	// Check if the directory exists
+	if _, err := os.Stat(obsidianPath); os.IsNotExist(err) {
+		return fmt.Errorf("obsidian folder does not exist: %s", obsidianPath)
+	}
+
+	// Find the git repository root (the obsidian folder might be inside a git repo)
+	gitRoot, err := findGitRoot(obsidianPath)
+	if err != nil {
+		return fmt.Errorf("not a git repository: %w", err)
+	}
+
+	// Get relative path from git root to obsidian folder
+	relPath, err := filepath.Rel(gitRoot, obsidianPath)
+	if err != nil {
+		return fmt.Errorf("error calculating relative path: %w", err)
+	}
+
+	// Change to git root directory for git commands
+	originalDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error getting current directory: %w", err)
+	}
+	defer os.Chdir(originalDir)
+
+	if err := os.Chdir(gitRoot); err != nil {
+		return fmt.Errorf("error changing to git root: %w", err)
+	}
+
+	// Add all files in the obsidian folder
+	addCmd := exec.Command("git", "add", relPath)
+	addCmd.Stdout = os.Stdout
+	addCmd.Stderr = os.Stderr
+	if err := addCmd.Run(); err != nil {
+		return fmt.Errorf("error adding files: %w", err)
+	}
+
+	// Check if there are any changes to commit
+	statusCmd := exec.Command("git", "status", "--porcelain", relPath)
+	statusOutput, err := statusCmd.Output()
+	if err != nil {
+		return fmt.Errorf("error checking git status: %w", err)
+	}
+
+	// If no changes, skip commit
+	if len(statusOutput) == 0 {
+		return nil
+	}
+
+	// Create commit message with current date
+	commitMessage := fmt.Sprintf("Update work notes: %s", time.Now().Format("2006-01-02"))
+
+	// Commit the changes
+	commitCmd := exec.Command("git", "commit", "-m", commitMessage)
+	commitCmd.Stdout = os.Stdout
+	commitCmd.Stderr = os.Stderr
+	if err := commitCmd.Run(); err != nil {
+		return fmt.Errorf("error committing files: %w", err)
+	}
+
+	return nil
+}
+
+// findGitRoot finds the root of the git repository by walking up from the given path
+func findGitRoot(path string) (string, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	current := absPath
+	for {
+		gitDir := filepath.Join(current, ".git")
+		if info, err := os.Stat(gitDir); err == nil && info.IsDir() {
+			return current, nil
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			// Reached filesystem root
+			break
+		}
+		current = parent
+	}
+
+	return "", fmt.Errorf("no git repository found")
 }
